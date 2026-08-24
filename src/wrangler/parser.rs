@@ -144,6 +144,8 @@ fn convert_raw_to_bindings(raw: RawWranglerConfig) -> WranglerBindings {
         let comment = kv.id.as_ref().map(|id| format!("KV Namespace ID: {id}"));
         let mut b = Binding::new(&kv.binding, BindingKind::Kv);
         b.comment = comment;
+        b.id = kv.id.clone();
+        b.preview_id = kv.preview_id.clone();
         wb.add(b);
     }
 

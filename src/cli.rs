@@ -9,7 +9,8 @@ use std::path::PathBuf;
     about = "⚡ Developer experience & workflow CLI for Cloudflare Workers, Pages, and Astro.",
     long_about = "⚡ flareops — Consolidated developer operations for the Cloudflare ecosystem.\n\
                   Generates strictly typed bindings, synchronizes secrets and .dev.vars, generates\n\
-                  and optimizes Pages _routes.json, and validates deployment integrity."
+                  and optimizes Pages _routes.json, manages _headers caching rules, validates\n\
+                  session bindings, and audits deployment integrity."
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -30,7 +31,15 @@ pub enum Commands {
     #[command(name = "routes")]
     Routes(RoutesCommand),
 
-    /// Verifies that generated TypeScript interfaces, .dev.vars, and _routes.json are in sync.
+    /// Manages, validates, and generates Cloudflare Pages _headers caching and security rules.
+    #[command(name = "headers")]
+    Headers(HeadersCommand),
+
+    /// Validates and initializes Astro Cloudflare KV session configuration.
+    #[command(name = "session")]
+    Session(SessionCommand),
+
+    /// Verifies that generated TypeScript interfaces, .dev.vars, routes, headers, and sessions are in sync.
     #[command(name = "check")]
     Check(CheckArgs),
 
@@ -199,6 +208,119 @@ pub struct RoutesSimulateArgs {
     /// Path to _routes.json file or project directory.
     #[arg(short, long, default_value = ".")]
     pub path: PathBuf,
+}
+
+#[derive(Args, Debug)]
+pub struct HeadersCommand {
+    #[command(subcommand)]
+    pub subcommand: HeadersSubcommands,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum HeadersSubcommands {
+    /// Scans static assets and creates optimized _headers with immutable cache rules and security headers.
+    #[command(name = "generate")]
+    Generate(HeadersGenerateArgs),
+
+    /// Checks _headers for syntax errors, conflicting max-age rules, and missing security headers.
+    #[command(name = "validate")]
+    Validate(HeadersValidateArgs),
+
+    /// Auto-adds missing immutable headers for hashed Vite/Astro assets.
+    #[command(name = "fix")]
+    Fix(HeadersFixArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct HeadersGenerateArgs {
+    /// Path to project directory or static asset output directory.
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+
+    /// Output path for generated _headers file.
+    #[arg(short, long)]
+    pub out: Option<PathBuf>,
+
+    /// Static asset directory override (e.g. dist).
+    #[arg(short, long)]
+    pub dir: Option<PathBuf>,
+}
+
+#[derive(Args, Debug)]
+pub struct HeadersValidateArgs {
+    /// Path to project root or _headers file.
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+
+    /// Static asset directory override (e.g. dist).
+    #[arg(short, long)]
+    pub dir: Option<PathBuf>,
+
+    /// Fail with exit code 1 on warnings or errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct HeadersFixArgs {
+    /// Path to project root or _headers file.
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+
+    /// Output destination for fixed _headers file.
+    #[arg(short, long)]
+    pub out: Option<PathBuf>,
+
+    /// Static asset directory override (e.g. dist).
+    #[arg(short, long)]
+    pub dir: Option<PathBuf>,
+}
+
+#[derive(Args, Debug)]
+pub struct SessionCommand {
+    #[command(subcommand)]
+    pub subcommand: SessionSubcommands,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum SessionSubcommands {
+    /// Validates astro.config.* session driver against wrangler.jsonc KV bindings.
+    #[command(name = "check")]
+    Check(SessionCheckArgs),
+
+    /// Scaffolds the missing session KV binding into wrangler.jsonc and astro.config.*.
+    #[command(name = "init")]
+    Init(SessionInitArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct SessionCheckArgs {
+    /// Path to project root directory.
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+
+    /// Target KV binding name override (defaults to driver config or SESSION).
+    #[arg(short, long)]
+    pub binding: Option<String>,
+
+    /// Target Wrangler environment.
+    #[arg(short, long)]
+    pub env: Option<String>,
+
+    /// Fail with exit code 1 on warnings or errors.
+    #[arg(long)]
+    pub strict: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct SessionInitArgs {
+    /// Path to project root directory.
+    #[arg(default_value = ".")]
+    pub path: PathBuf,
+
+    /// KV binding name to scaffold (default: SESSION).
+    #[arg(short, long, default_value = "SESSION")]
+    pub binding: String,
 }
 
 #[derive(Args, Debug)]

@@ -7,7 +7,7 @@ branding:
 
 inputs:
   command:
-    description: "Subcommand to run: check, sync, env, routes, migrate"
+    description: "Subcommand to run: check, sync, env, routes, headers, session, migrate"
     required: false
     default: "check"
   path:

@@ -4,18 +4,29 @@ use clap_complete::{Shell, generate};
 use colored::Colorize;
 use flareops::cli::{
     CheckArgs, Cli, Commands, CompletionsArgs, EnvCommand, EnvPullArgs, EnvSubcommands,
-    EnvValidateArgs, MigrateArgs, RoutesCommand, RoutesGenerateArgs, RoutesOptimizeArgs,
-    RoutesSimulateArgs, RoutesSubcommands, RoutesValidateArgs, ShellType, SyncArgs,
+    EnvValidateArgs, HeadersCommand, HeadersFixArgs, HeadersGenerateArgs, HeadersSubcommands,
+    HeadersValidateArgs, MigrateArgs, RoutesCommand, RoutesGenerateArgs, RoutesOptimizeArgs,
+    RoutesSimulateArgs, RoutesSubcommands, RoutesValidateArgs, SessionCheckArgs, SessionCommand,
+    SessionInitArgs, SessionSubcommands, ShellType, SyncArgs,
 };
 use flareops::env::{EnvDiagnosticSeverity, pull_dev_vars, scan_and_migrate, validate_env};
+use flareops::headers::{
+    HeaderSeverity, HeadersFile, find_headers_file, generate_optimal_headers,
+    resolve_headers_target, validate_headers, write_headers_file,
+};
 use flareops::routes::{
     RouteMatchResult, RoutesConfig, Severity, find_static_dir, generate_routes_from_dir,
     optimize_routes, simulate_route, validate_routes_file, write_routes_json,
+};
+use flareops::session::{
+    AstroConfigInfo, SessionSeverity, find_astro_config, init_session, parse_astro_config,
+    scan_directory_for_session, validate_session,
 };
 use flareops::sync::{GeneratorOptions, SyncMode, sync_env_file};
 use flareops::wrangler::{find_wrangler_config, parse_wrangler_file};
 use std::fs;
 use std::io;
+use std::path::Path;
 use std::process::exit;
 
 fn main() {
@@ -32,6 +43,8 @@ fn run() -> Result<()> {
         Commands::Sync(args) => handle_sync(args),
         Commands::Env(cmd) => handle_env(cmd),
         Commands::Routes(cmd) => handle_routes(cmd),
+        Commands::Headers(cmd) => handle_headers(cmd),
+        Commands::Session(cmd) => handle_session(cmd),
         Commands::Check(args) => handle_check(args),
         Commands::Migrate(args) => handle_migrate(args),
         Commands::Completions(args) => handle_completions(args),
@@ -48,7 +61,7 @@ fn handle_sync(args: SyncArgs) -> Result<()> {
 
     let project_dir = wrangler_path
         .parent()
-        .unwrap_or_else(|| std::path::Path::new("."));
+        .unwrap_or_else(|| Path::new("."));
 
     let bindings = parse_wrangler_file(&wrangler_path, args.env.as_deref())?;
     let mode: SyncMode = args.mode.parse().unwrap_or(SyncMode::Astro);
@@ -152,7 +165,7 @@ fn handle_env_pull(args: EnvPullArgs) -> Result<()> {
         .with_context(|| format!("No wrangler config found in {}", args.path.display()))?;
     let project_dir = wrangler_path
         .parent()
-        .unwrap_or_else(|| std::path::Path::new("."));
+        .unwrap_or_else(|| Path::new("."));
 
     let bindings = parse_wrangler_file(&wrangler_path, args.env.as_deref())?;
     let res = pull_dev_vars(&bindings, project_dir, args.example, args.force)?;
@@ -191,7 +204,7 @@ fn handle_env_validate(args: EnvValidateArgs) -> Result<()> {
         .with_context(|| format!("No wrangler config found in {}", args.path.display()))?;
     let project_dir = wrangler_path
         .parent()
-        .unwrap_or_else(|| std::path::Path::new("."));
+        .unwrap_or_else(|| Path::new("."));
 
     let bindings = parse_wrangler_file(&wrangler_path, args.env.as_deref())?;
     let report = validate_env(&bindings, project_dir);
@@ -397,6 +410,286 @@ fn handle_routes_simulate(args: RoutesSimulateArgs) -> Result<()> {
         }
     }
     println!();
+
+    Ok(())
+}
+
+fn handle_headers(cmd: HeadersCommand) -> Result<()> {
+    match cmd.subcommand {
+        HeadersSubcommands::Generate(args) => handle_headers_generate(args),
+        HeadersSubcommands::Validate(args) => handle_headers_validate(args),
+        HeadersSubcommands::Fix(args) => handle_headers_fix(args),
+    }
+}
+
+fn handle_headers_generate(args: HeadersGenerateArgs) -> Result<()> {
+    let project_dir = if args.path.is_file() {
+        args.path.parent().unwrap_or_else(|| Path::new("."))
+    } else {
+        &args.path
+    };
+
+    let default_dist = project_dir.join("dist");
+    let dist_dir = args.dir.as_deref().or_else(|| {
+        if default_dist.is_dir() {
+            Some(default_dist.as_path())
+        } else {
+            None
+        }
+    });
+
+    let existing_content = find_headers_file(project_dir)
+        .and_then(|p| fs::read_to_string(p).ok())
+        .unwrap_or_default();
+
+    let parsed = HeadersFile::parse(&existing_content);
+    let optimal = generate_optimal_headers(parsed, dist_dir);
+
+    let out_path = args.out.unwrap_or_else(|| resolve_headers_target(project_dir, dist_dir));
+    write_headers_file(&optimal, &out_path)?;
+
+    println!(
+        "{}",
+        format!(
+            "✔ Generated {} with {} header rules (including immutable cache & security headers).",
+            out_path.display(),
+            optimal.rules.len()
+        )
+        .green()
+        .bold()
+    );
+
+    Ok(())
+}
+
+fn handle_headers_validate(args: HeadersValidateArgs) -> Result<()> {
+    let headers_path = if args.path.is_file() {
+        args.path.clone()
+    } else {
+        find_headers_file(&args.path)
+            .with_context(|| format!("No _headers file found in {}", args.path.display()))?
+    };
+
+    let default_dist = headers_path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join("dist");
+    let dist_dir = args.dir.as_deref().or_else(|| {
+        if default_dist.is_dir() {
+            Some(default_dist.as_path())
+        } else {
+            None
+        }
+    });
+
+    let content = fs::read_to_string(&headers_path)
+        .with_context(|| format!("Failed to read {}", headers_path.display()))?;
+    let parsed = HeadersFile::parse(&content);
+    let report = validate_headers(&parsed, dist_dir);
+
+    println!();
+    println!("{}", "⚡ FLAREOPS / PAGES _HEADERS VALIDATION".bold());
+    println!("{}", "═".repeat(60).dimmed());
+    println!("File: {}", headers_path.display().to_string().bold());
+    println!("Total rules: {}", report.rules_count);
+
+    if report.astro_assets_found > 0 {
+        println!("Astro hashed assets found: {}", report.astro_assets_found);
+    }
+
+    for diag in &report.diagnostics {
+        let prefix = match diag.severity {
+            HeaderSeverity::Error => "✖ [ERROR]".red().bold(),
+            HeaderSeverity::Warning => "▲ [WARN]".yellow().bold(),
+            HeaderSeverity::Info => "● [INFO]".cyan(),
+        };
+        println!("{prefix} [{}] {}", diag.rule, diag.message);
+        if let Some(ref sug) = diag.suggestion {
+            println!("   ↳ {}", sug.dimmed());
+        }
+    }
+
+    println!();
+    if report.is_clean() {
+        println!(
+            "{}",
+            "✔ _headers caching rules and security headers are valid."
+                .green()
+                .bold()
+        );
+        Ok(())
+    } else {
+        if args.strict {
+            bail!("_headers validation failed with errors or warnings.");
+        }
+        Ok(())
+    }
+}
+
+fn handle_headers_fix(args: HeadersFixArgs) -> Result<()> {
+    let project_dir = if args.path.is_file() {
+        args.path.parent().unwrap_or_else(|| Path::new("."))
+    } else {
+        &args.path
+    };
+
+    let headers_path = if args.path.is_file() {
+        args.path.clone()
+    } else {
+        find_headers_file(project_dir).unwrap_or_else(|| project_dir.join("_headers"))
+    };
+
+    let default_dist = project_dir.join("dist");
+    let dist_dir = args.dir.as_deref().or_else(|| {
+        if default_dist.is_dir() {
+            Some(default_dist.as_path())
+        } else {
+            None
+        }
+    });
+
+    let existing_content = if headers_path.exists() {
+        fs::read_to_string(&headers_path).unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    let parsed = HeadersFile::parse(&existing_content);
+    let optimal = generate_optimal_headers(parsed, dist_dir);
+
+    let out_path = args.out.unwrap_or(headers_path);
+    write_headers_file(&optimal, &out_path)?;
+
+    println!(
+        "{}",
+        format!(
+            "✔ Remediated {} with optimized immutable and security header rules.",
+            out_path.display()
+        )
+        .green()
+        .bold()
+    );
+
+    Ok(())
+}
+
+fn handle_session(cmd: SessionCommand) -> Result<()> {
+    match cmd.subcommand {
+        SessionSubcommands::Check(args) => handle_session_check(args),
+        SessionSubcommands::Init(args) => handle_session_init(args),
+    }
+}
+
+fn handle_session_check(args: SessionCheckArgs) -> Result<()> {
+    let project_dir = if args.path.is_file() {
+        args.path.parent().unwrap_or_else(|| Path::new("."))
+    } else {
+        &args.path
+    };
+
+    let astro_config_path = find_astro_config(project_dir);
+    let astro_config = if let Some(ref apath) = astro_config_path {
+        parse_astro_config(apath).unwrap_or_default()
+    } else {
+        AstroConfigInfo::default()
+    };
+
+    let wrangler_path = find_wrangler_config(project_dir);
+    let bindings = if let Some(ref wpath) = wrangler_path {
+        parse_wrangler_file(wpath, args.env.as_deref()).ok()
+    } else {
+        None
+    };
+
+    let src_dir = project_dir.join("src");
+    let session_usages = scan_directory_for_session(&src_dir).unwrap_or_default();
+
+    let report = validate_session(
+        project_dir,
+        &astro_config,
+        bindings.as_ref(),
+        &session_usages,
+        args.binding.as_deref(),
+        args.strict,
+    );
+
+    println!();
+    println!(
+        "{}",
+        "⚡ FLAREOPS / ASTRO SESSION KV BINDING AUDIT".bold()
+    );
+    println!("{}", "═".repeat(60).dimmed());
+
+    if let Some(ref path) = astro_config.file_path {
+        println!("Astro config: {}", path.display().to_string().cyan());
+    }
+    if let Some(ref path) = wrangler_path {
+        println!("Wrangler config: {}", path.display().to_string().cyan());
+    }
+    println!("Detected session usages: {}", session_usages.len());
+    println!();
+
+    for diag in &report.diagnostics {
+        let prefix = match diag.severity {
+            SessionSeverity::Error => "✖ [ERROR]".red().bold(),
+            SessionSeverity::Warning => "▲ [WARN]".yellow().bold(),
+            SessionSeverity::Info => "● [INFO]".cyan(),
+            SessionSeverity::Success => "✔ [PASS]".green().bold(),
+        };
+        println!("{prefix} [{}] {}", diag.code.as_str(), diag.message);
+        if let Some(ref sug) = diag.suggestion {
+            println!("   ↳ {}", sug.dimmed());
+        }
+    }
+
+    println!();
+    if report.passed {
+        println!(
+            "{}",
+            "✔ Astro Cloudflare KV Session configuration is valid."
+                .green()
+                .bold()
+        );
+        Ok(())
+    } else {
+        bail!(
+            "Astro session validation failed with {} error(s) and {} warning(s).",
+            report.error_count,
+            report.warning_count
+        );
+    }
+}
+
+fn handle_session_init(args: SessionInitArgs) -> Result<()> {
+    let project_dir = if args.path.is_file() {
+        args.path.parent().unwrap_or_else(|| Path::new("."))
+    } else {
+        &args.path
+    };
+
+    let result = init_session(project_dir, &args.binding)?;
+
+    println!();
+    println!(
+        "{}",
+        "⚡ FLAREOPS / ASTRO SESSION INITIALIZATION".bold()
+    );
+    println!("{}", "═".repeat(60).dimmed());
+
+    for msg in &result.messages {
+        println!("✔ {msg}");
+    }
+
+    println!();
+    println!(
+        "{}",
+        format!(
+            "✔ Session KV binding '{}' successfully scaffolded.",
+            args.binding
+        )
+        .green()
+        .bold()
+    );
 
     Ok(())
 }

@@ -26,9 +26,9 @@
     body { background-color: var(--bg); color: var(--text); font-family: var(--font-sans); line-height: 1.6; -webkit-font-smoothing: antialiased; }
     .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
     header { border-bottom: 1px solid var(--border); padding: 3.5rem 0 2.5rem; }
-    .badge { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.3rem 0.7rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--accent); margin-bottom: 1.5rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.3rem 0.7rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--accent); margin-bottom: 1.5rem; border-radius: 0; }
     h1 { font-size: 3.2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 1rem; line-height: 1.1; }
-    .tagline { font-size: 1.25rem; color: var(--text-muted); max-width: 750px; margin-bottom: 2rem; font-weight: 400; }
+    .tagline { font-size: 1.25rem; color: var(--text-muted); max-width: 780px; margin-bottom: 2rem; font-weight: 400; }
     .actions { display: flex; gap: 1rem; flex-wrap: wrap; }
     .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.8rem 1.6rem; font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; text-decoration: none; border-radius: 0; cursor: pointer; transition: all 0.15s ease; }
     .btn-primary { background: var(--text); color: var(--bg); border: 1px solid var(--text); }
@@ -36,14 +36,14 @@
     .btn-secondary { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); }
     .btn-secondary:hover { border-color: var(--text-muted); }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin: 3.5rem 0; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); padding: 2rem; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); padding: 2rem; border-radius: 0; }
     .card:hover { border-color: var(--border-accent); }
     .card-tag { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
     .card h3 { font-size: 1.35rem; font-weight: 700; margin-bottom: 0.75rem; }
     .card p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem; }
-    .card code { display: block; background: #000; padding: 0.6rem 0.8rem; font-family: var(--font-mono); font-size: 0.85rem; border: 1px solid var(--border); color: #e5e5e5; }
+    .card code { display: block; background: #000; padding: 0.6rem 0.8rem; font-family: var(--font-mono); font-size: 0.85rem; border: 1px solid var(--border); color: #e5e5e5; border-radius: 0; }
     .section-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
-    .code-block { background: #000000; border: 1px solid var(--border); padding: 1.5rem; font-family: var(--font-mono); font-size: 0.88rem; overflow-x: auto; color: #e5e5e5; margin-bottom: 2.5rem; line-height: 1.5; }
+    .code-block { background: #000000; border: 1px solid var(--border); padding: 1.5rem; font-family: var(--font-mono); font-size: 0.88rem; overflow-x: auto; color: #e5e5e5; margin-bottom: 2.5rem; line-height: 1.5; border-radius: 0; }
     .code-comment { color: #666666; }
     .code-keyword { color: #f97316; }
     .code-string { color: #10b981; }
@@ -62,7 +62,7 @@
     <div class="container">
       <div class="badge">⚡ THE FLARE SUITE / OPERATIONS & WORKFLOW</div>
       <h1>flareops</h1>
-      <p class="tagline">Developer operations & workflow CLI for Cloudflare Workers, Pages, and Astro — consolidating strict type generation, .dev.vars secret management, Pages _routes.json optimization, and unified verification.</p>
+      <p class="tagline">Developer operations & workflow CLI for Cloudflare Workers, Pages, and Astro — consolidating strict type generation, .dev.vars secret management, Pages _routes.json optimization, _headers immutable caching rules, Astro session verification, and unified pre-deploy audits.</p>
       <div class="actions">
         <a href="https://github.com/bhubbard/flareops" class="btn btn-primary">View on GitHub</a>
         <a href="#quickstart" class="btn btn-secondary">Get Started</a>
@@ -94,9 +94,23 @@
       </div>
 
       <div class="card">
+        <div class="card-tag">Subcommand: headers</div>
+        <h3>📑 Pages _headers & Edge Cache</h3>
+        <p>Scans static asset bundles and generates or remediates optimized <code>_headers</code> with immutable cache rules (<code>/_astro/*</code>, fonts, images) and security headers.</p>
+        <code>flareops headers generate / fix</code>
+      </div>
+
+      <div class="card">
+        <div class="card-tag">Subcommand: session</div>
+        <h3>🗄 Astro KV Session Audit</h3>
+        <p>Validates <code>astro.config.*</code> session driver configuration against <code>wrangler.jsonc</code> KV namespace bindings and auto-scaffolds missing session bindings.</p>
+        <code>flareops session check / init</code>
+      </div>
+
+      <div class="card">
         <div class="card-tag">Subcommand: check</div>
         <h3>✔ Unified Verification</h3>
-        <p>Comprehensive pre-deploy validation verifying that TypeScript interfaces, <code>.dev.vars</code> secrets, and Pages route rules are synchronized with wrangler configuration.</p>
+        <p>Comprehensive pre-deploy validation verifying that TypeScript interfaces, <code>.dev.vars</code> secrets, Pages route rules, headers, and sessions are synchronized.</p>
         <code>flareops check</code>
       </div>
 

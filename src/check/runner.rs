@@ -1,5 +1,12 @@
 use crate::env::{EnvValidationReport, scan_and_migrate, validate_env};
+use crate::headers::{
+    HeaderValidationReport, HeadersFile, find_headers_file, validate_headers,
+};
 use crate::routes::{RouteValidationReport, validate_routes_file};
+use crate::session::{
+    AstroConfigInfo, SessionValidationReport, find_astro_config, parse_astro_config,
+    scan_directory_for_session, validate_session,
+};
 use crate::sync::generator::{GeneratorOptions, SyncMode, generate_complete_env_dts};
 use crate::wrangler::{WranglerBindings, find_wrangler_config, parse_wrangler_file};
 use anyhow::Result;
@@ -25,6 +32,8 @@ pub struct FullCheckReport {
     pub items: Vec<CheckItem>,
     pub env_report: Option<EnvValidationReport>,
     pub routes_report: Option<RouteValidationReport>,
+    pub headers_report: Option<HeaderValidationReport>,
+    pub session_report: Option<SessionValidationReport>,
     pub bindings_count: usize,
 }
 
@@ -71,7 +80,7 @@ impl FullCheckReport {
         if self.is_clean() {
             println!(
                 "{}",
-                "✔ All Cloudflare environment & route checks passed!"
+                "✔ All Cloudflare environment, route, header, and session checks passed!"
                     .green()
                     .bold()
             );
@@ -92,6 +101,7 @@ pub fn run_full_check(project_dir: &Path, env: Option<&str>) -> Result<FullCheck
 
     // 1. Check Wrangler Config
     let wrangler_path = find_wrangler_config(project_dir);
+    let mut parsed_bindings: Option<WranglerBindings> = None;
     let bindings = if let Some(ref wpath) = wrangler_path {
         report.wrangler_path = Some(wpath.clone());
         match parse_wrangler_file(wpath, env) {
@@ -108,6 +118,7 @@ pub fn run_full_check(project_dir: &Path, env: Option<&str>) -> Result<FullCheck
                     ),
                     suggestion: None,
                 });
+                parsed_bindings = Some(b.clone());
                 b
             }
             Err(e) => {
@@ -146,8 +157,7 @@ pub fn run_full_check(project_dir: &Path, env: Option<&str>) -> Result<FullCheck
                 mode: SyncMode::Astro,
                 include_comments: true,
             };
-            let expected = generate_complete_env_dts(&bindings, &options, None);
-            // Check if all binding names are present in env.d.ts
+            let _expected = generate_complete_env_dts(&bindings, &options, None);
             let mut missing_bindings = Vec::new();
             for b in &bindings.bindings {
                 if !content.contains(&b.name) {
@@ -180,7 +190,6 @@ pub fn run_full_check(project_dir: &Path, env: Option<&str>) -> Result<FullCheck
                     suggestion: Some("Run `flareops sync` to regenerate types".to_string()),
                 });
             }
-            let _ = expected; // suppress unused
         }
     } else {
         report.items.push(CheckItem {
@@ -275,7 +284,102 @@ pub fn run_full_check(project_dir: &Path, env: Option<&str>) -> Result<FullCheck
         }
     }
 
-    // 5. Check Astro Legacy Runtime Patterns
+    // 5. Check Pages _headers (caching rules & security headers)
+    let dist_dir_candidate = project_dir.join("dist");
+    let dist_dir_ref = if dist_dir_candidate.is_dir() {
+        Some(dist_dir_candidate.as_path())
+    } else {
+        None
+    };
+
+    let headers_file_found = find_headers_file(project_dir);
+    if let Some(ref hpath) = headers_file_found {
+        let content = fs::read_to_string(hpath).unwrap_or_default();
+        let parsed_headers = HeadersFile::parse(&content);
+        let hreport = validate_headers(&parsed_headers, dist_dir_ref);
+        let is_clean = hreport.is_clean();
+
+        let details = format!(
+            "Parsed {} rules from {}",
+            hreport.rules_count,
+            hpath.file_name().unwrap_or_default().to_string_lossy()
+        );
+
+        report.items.push(CheckItem {
+            category: "Headers".to_string(),
+            title: "Pages _headers".to_string(),
+            passed: is_clean,
+            message: details,
+            suggestion: if is_clean {
+                None
+            } else {
+                Some("Run `flareops headers fix` to correct caching and security headers".to_string())
+            },
+        });
+        report.headers_report = Some(hreport);
+    } else {
+        // If dist has _astro assets but no _headers
+        let has_astro_assets = dist_dir_candidate.join("_astro").is_dir();
+        if has_astro_assets {
+            report.items.push(CheckItem {
+                category: "Headers".to_string(),
+                title: "Pages _headers".to_string(),
+                passed: false,
+                message: "No `_headers` file found despite hashed Astro static assets in `dist/_astro`".to_string(),
+                suggestion: Some("Run `flareops headers generate` to create optimal headers".to_string()),
+            });
+        }
+    }
+
+    // 6. Check Astro Session KV Bindings
+    let astro_config_path = find_astro_config(project_dir);
+    let astro_config = if let Some(ref apath) = astro_config_path {
+        parse_astro_config(apath).unwrap_or_default()
+    } else {
+        AstroConfigInfo::default()
+    };
+
+    let src_dir = project_dir.join("src");
+    let session_usages = scan_directory_for_session(&src_dir).unwrap_or_default();
+
+    if astro_config.has_session_config || !session_usages.is_empty() {
+        let sreport = validate_session(
+            project_dir,
+            &astro_config,
+            parsed_bindings.as_ref(),
+            &session_usages,
+            None,
+            false,
+        );
+
+        let is_clean = sreport.is_clean();
+        let target_binding = astro_config
+            .session_binding_name
+            .as_deref()
+            .unwrap_or("SESSION");
+
+        report.items.push(CheckItem {
+            category: "Session".to_string(),
+            title: "Astro Session KV Binding".to_string(),
+            passed: is_clean,
+            message: if is_clean {
+                format!("KV binding '{target_binding}' verified for Astro session driver")
+            } else {
+                format!(
+                    "{} issue(s) detected in Astro session configuration",
+                    sreport.error_count + sreport.warning_count
+                )
+            },
+            suggestion: if is_clean {
+                None
+            } else {
+                Some("Run `flareops session init` to scaffold missing session KV bindings".to_string())
+            },
+        });
+        report.session_report = Some(sreport);
+    }
+
+    // 7. Check Astro Legacy Runtime Patterns
     let migration_summary = scan_and_migrate(project_dir, true, None);
     if migration_summary.total_replacements == 0 {
         report.items.push(CheckItem {

@@ -79,6 +79,8 @@ pub struct Binding {
     pub kind: BindingKind,
     pub custom_type: Option<String>,
     pub comment: Option<String>,
+    pub id: Option<String>,
+    pub preview_id: Option<String>,
 }
 
 impl Binding {
@@ -88,6 +90,8 @@ impl Binding {
             kind,
             custom_type: None,
             comment: None,
+            id: None,
+            preview_id: None,
         }
     }
 
@@ -101,6 +105,8 @@ impl Binding {
             kind,
             custom_type: Some(ts_type.into()),
             comment: None,
+            id: None,
+            preview_id: None,
         }
     }
 
@@ -231,6 +237,7 @@ pub struct RawWranglerConfig {
 pub struct RawKvBinding {
     pub binding: String,
     pub id: Option<String>,
+    pub preview_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
