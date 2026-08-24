@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>flareops — Cloudflare Developer Operations & Workflow CLI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card-bg: #121212;
+      --border: #262626;
+      --border-accent: #333333;
+      --text: #ffffff;
+      --text-muted: #888888;
+      --accent: #f97316;
+      --accent-hover: #fb923c;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); font-family: var(--font-sans); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+    header { border-bottom: 1px solid var(--border); padding: 3.5rem 0 2.5rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.3rem 0.7rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--accent); margin-bottom: 1.5rem; }
+    h1 { font-size: 3.2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 1rem; line-height: 1.1; }
+    .tagline { font-size: 1.25rem; color: var(--text-muted); max-width: 750px; margin-bottom: 2rem; font-weight: 400; }
+    .actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.8rem 1.6rem; font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; text-decoration: none; border-radius: 0; cursor: pointer; transition: all 0.15s ease; }
+    .btn-primary { background: var(--text); color: var(--bg); border: 1px solid var(--text); }
+    .btn-primary:hover { background: #e5e5e5; }
+    .btn-secondary { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--text-muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin: 3.5rem 0; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); padding: 2rem; }
+    .card:hover { border-color: var(--border-accent); }
+    .card-tag { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+    .card h3 { font-size: 1.35rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .card p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem; }
+    .card code { display: block; background: #000; padding: 0.6rem 0.8rem; font-family: var(--font-mono); font-size: 0.85rem; border: 1px solid var(--border); color: #e5e5e5; }
+    .section-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
+    .code-block { background: #000000; border: 1px solid var(--border); padding: 1.5rem; font-family: var(--font-mono); font-size: 0.88rem; overflow-x: auto; color: #e5e5e5; margin-bottom: 2.5rem; line-height: 1.5; }
+    .code-comment { color: #666666; }
+    .code-keyword { color: #f97316; }
+    .code-string { color: #10b981; }
+    .code-func { color: #60a5fa; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 3rem; font-size: 0.95rem; }
+    th, td { border: 1px solid var(--border); padding: 1rem 1.25rem; text-align: left; }
+    th { background: var(--card-bg); font-family: var(--font-mono); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    td { background: var(--bg); }
+    footer { border-top: 1px solid var(--border); padding: 3rem 0; color: var(--text-muted); font-size: 0.85rem; text-align: center; }
+    footer a { color: var(--text); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="badge">⚡ THE FLARE SUITE / OPERATIONS & WORKFLOW</div>
+      <h1>flareops</h1>
+      <p class="tagline">Developer operations & workflow CLI for Cloudflare Workers, Pages, and Astro — consolidating strict type generation, .dev.vars secret management, Pages _routes.json optimization, and unified verification.</p>
+      <div class="actions">
+        <a href="https://github.com/bhubbard/flareops" class="btn btn-primary">View on GitHub</a>
+        <a href="#quickstart" class="btn btn-secondary">Get Started</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <div class="card">
+        <div class="card-tag">Subcommand: sync</div>
+        <h3>⚡ TypeScript Binding Sync</h3>
+        <p>Parses <code>wrangler.jsonc</code> or <code>wrangler.toml</code> and generates strictly typed <code>cloudflare-env.d.ts</code> covering KV, D1, R2, Queues, Vectorize, Hyperdrive, AI, Services, and more.</p>
+        <code>flareops sync [PATH]</code>
+      </div>
+
+      <div class="card">
+        <div class="card-tag">Subcommand: env</div>
+        <h3>🔒 Local Secrets & Environment</h3>
+        <p>Manages <code>.dev.vars</code> local development environment files safely, scaffolds secret templates, merges variables, and validates <code>.gitignore</code> security against leaks.</p>
+        <code>flareops env pull / env validate</code>
+      </div>
+
+      <div class="card">
+        <div class="card-tag">Subcommand: routes</div>
+        <h3>🌐 Pages _routes.json Optimizer</h3>
+        <p>Scans Astro, Remix, and SvelteKit static asset output and auto-generates optimized, minified <code>_routes.json</code> guaranteed to stay under Cloudflare's strict 100-rule limit.</p>
+        <code>flareops routes generate dist</code>
+      </div>
+
+      <div class="card">
+        <div class="card-tag">Subcommand: check</div>
+        <h3>✔ Unified Verification</h3>
+        <p>Comprehensive pre-deploy validation verifying that TypeScript interfaces, <code>.dev.vars</code> secrets, and Pages route rules are synchronized with wrangler configuration.</p>
+        <code>flareops check</code>
+      </div>
+
+      <div class="card">
+        <div class="card-tag">Subcommand: migrate</div>
+        <h3>🚀 Astro v5 Codemod</h3>
+        <p>Scans project files and codemods legacy <code>Astro.locals.runtime.env</code> calls to modern Astro v5 and <code>@astrojs/cloudflare</code> v12 <code>Astro.locals.*</code> format.</p>
+        <code>flareops migrate src/</code>
+      </div>
+
+      <div class="card">
+        <div class="card-tag">Subcommand: completions</div>
+        <h3>🐚 Shell Autocompletions</h3>
+        <p>Generates native, fast autocompletions for <code>zsh</code>, <code>bash</code>, <code>fish</code>, <code>powershell</code>, and <code>elvish</code>.</p>
+        <code>flareops completions zsh</code>
+      </div>
+    </div>
+
+    <section id="quickstart" style="margin-bottom: 3.5rem;">
+      <h2 class="section-title">Pre-Deploy CI/CD Integration</h2>
+      <div class="code-block">
+<span class="code-comment"># In your .github/workflows/ci.yml</span>
+- <span class="code-keyword">name:</span> Cloudflare Ops &amp; Verification
+  <span class="code-keyword">uses:</span> bhubbard/flareops@main
+  <span class="code-keyword">with:</span>
+    <span class="code-keyword">command:</span> check
+    <span class="code-keyword">path:</span> .
+    <span class="code-keyword">strict:</span> <span class="code-string">true</span>
+      </div>
+    </section>
+
+    <section style="margin-bottom: 4rem;">
+      <h2 class="section-title">Cloudflare Bindings Type Safety Matrix</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Cloudflare Binding</th>
+            <th>Generated TypeScript Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Storage</td>
+            <td>KV Namespaces</td>
+            <td><code>KVNamespace</code></td>
+          </tr>
+          <tr>
+            <td>Storage</td>
+            <td>D1 Relational SQLite</td>
+            <td><code>D1Database</code></td>
+          </tr>
+          <tr>
+            <td>Storage</td>
+            <td>R2 Object Storage</td>
+            <td><code>R2Bucket</code></td>
+          </tr>
+          <tr>
+            <td>Storage</td>
+            <td>Vectorize Vector Search</td>
+            <td><code>VectorizeIndex</code></td>
+          </tr>
+          <tr>
+            <td>Database</td>
+            <td>Hyperdrive TCP Accelerator</td>
+            <td><code>Hyperdrive</code></td>
+          </tr>
+          <tr>
+            <td>AI &amp; Compute</td>
+            <td>Workers AI Serverless LLMs</td>
+            <td><code>Ai</code></td>
+          </tr>
+          <tr>
+            <td>Microservices</td>
+            <td>Service Bindings / Assets</td>
+            <td><code>Fetcher</code></td>
+          </tr>
+          <tr>
+            <td>Messaging</td>
+            <td>Cloudflare Queues</td>
+            <td><code>Queue</code></td>
+          </tr>
+          <tr>
+            <td>Stateful</td>
+            <td>Durable Objects</td>
+            <td><code>DurableObjectNamespace</code></td>
+          </tr>
+          <tr>
+            <td>Orchestration</td>
+            <td>Cloudflare Workflows</td>
+            <td><code>Workflow</code></td>
+          </tr>
+          <tr>
+            <td>Environment</td>
+            <td>Vars &amp; Secrets</td>
+            <td><code>string | number | boolean</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2026 Brandon Hubbard • Part of <a href="https://github.com/bhubbard">The Flare Suite</a> • Swiss Modernist Grid Standards</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,29 @@
+name: "Flareops Cloudflare Operations & Verification"
+description: "Synchronize Cloudflare Workers & Pages typed bindings, validate .dev.vars secrets, optimize _routes.json, and audit deployment readiness."
+author: "Brandon Hubbard <bhubbard@users.noreply.github.com>"
+branding:
+  icon: "command"
+  color: "orange"
+
+inputs:
+  command:
+    description: "Subcommand to run: check, sync, env, routes, migrate"
+    required: false
+    default: "check"
+  path:
+    description: "Path to project root directory"
+    required: false
+    default: "."
+  strict:
+    description: "Fail the workflow if verification finds errors or warnings"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Flareops
+      shell: bash
+      run: |
+        echo "⚡ Running Flareops ${{ inputs.command }} on ${{ inputs.path }}..."
+        cargo run --manifest-path ${{ github.action_path }}/Cargo.toml --release -- ${{ inputs.command }} ${{ inputs.path }} ${{ inputs.strict == 'true' && '--strict' || '' }}
