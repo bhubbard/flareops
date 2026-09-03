@@ -10,7 +10,10 @@ pub fn generate_optimal_headers(mut existing: HeadersFile, dist_dir: Option<&Pat
     if let Some(dist) = dist_dir
         && dist.is_dir()
     {
-        for entry in walkdir::WalkDir::new(dist).into_iter().filter_map(|e| e.ok()) {
+        for entry in walkdir::WalkDir::new(dist)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
             let path = entry.path();
             if path.is_file()
                 && let Some(ext) = path.extension().and_then(|e| e.to_str())

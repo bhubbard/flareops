@@ -26,9 +26,10 @@ pub use routes::{
 };
 pub use session::{
     ASTRO_CONFIG_CANDIDATES, AstroConfigInfo, SessionCode, SessionDiagnostic, SessionInitResult,
-    SessionSeverity, SessionUsage, SessionValidationReport, extract_object_block, find_astro_config,
-    init_session, is_placeholder_id, parse_astro_config, parse_astro_config_content,
-    scan_directory_for_session, scan_file_content, scan_file_for_session, validate_session,
+    SessionSeverity, SessionUsage, SessionValidationReport, extract_object_block,
+    find_astro_config, init_session, is_placeholder_id, parse_astro_config,
+    parse_astro_config_content, scan_directory_for_session, scan_file_content,
+    scan_file_for_session, validate_session,
 };
 pub use sync::{
     END_MARKER, GeneratorOptions, START_MARKER, SyncMode, SyncResult, TsFileAnalysis,

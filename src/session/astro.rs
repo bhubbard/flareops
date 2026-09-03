@@ -72,7 +72,10 @@ pub fn extract_object_block(content: &str, key: &str) -> Option<String> {
 
 pub fn parse_astro_config(file_path: &Path) -> Result<AstroConfigInfo, std::io::Error> {
     let content = fs::read_to_string(file_path)?;
-    Ok(parse_astro_config_content(&content, Some(file_path.to_path_buf())))
+    Ok(parse_astro_config_content(
+        &content,
+        Some(file_path.to_path_buf()),
+    ))
 }
 
 pub fn parse_astro_config_content(content: &str, file_path: Option<PathBuf>) -> AstroConfigInfo {

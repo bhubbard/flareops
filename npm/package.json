@@ -1,0 +1,41 @@
+{
+  "name": "flareops",
+  "version": "0.1.0",
+  "description": "Developer experience & workflow CLI for Cloudflare Workers, Pages, and Astro — type generation, secret sync, route optimization, and unified validation.",
+  "main": "bin/flareops.js",
+  "bin": {
+    "flareops": "bin/flareops.js"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhubbard/flareops.git"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "pages",
+    "astro",
+    "wrangler",
+    "typescript",
+    "types",
+    "secrets",
+    "cli"
+  ],
+  "author": "Brandon Hubbard <bhubbard@users.noreply.github.com>",
+  "license": "MIT OR Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/bhubbard/flareops/issues"
+  },
+  "homepage": "https://bhubbard.github.io/flareops",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin/",
+    "install.js",
+    "README.md"
+  ]
+}

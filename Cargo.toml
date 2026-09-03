@@ -9,6 +9,7 @@ repository = "https://github.com/bhubbard/flareops"
 homepage = "https://bhubbard.github.io/flareops"
 keywords = ["cloudflare", "workers", "pages", "astro", "cli"]
 categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
 
 [lib]
 name = "flareops"

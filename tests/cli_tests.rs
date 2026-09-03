@@ -93,7 +93,12 @@ fn test_cli_parsing_headers_commands() {
 #[test]
 fn test_cli_parsing_session_commands() {
     let cli = Cli::try_parse_from([
-        "flareops", "session", "check", "--binding", "MY_SESSION", "--strict",
+        "flareops",
+        "session",
+        "check",
+        "--binding",
+        "MY_SESSION",
+        "--strict",
     ])
     .unwrap();
     match cli.command {

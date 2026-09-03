@@ -1,7 +1,5 @@
 use crate::env::{EnvValidationReport, scan_and_migrate, validate_env};
-use crate::headers::{
-    HeaderValidationReport, HeadersFile, find_headers_file, validate_headers,
-};
+use crate::headers::{HeaderValidationReport, HeadersFile, find_headers_file, validate_headers};
 use crate::routes::{RouteValidationReport, validate_routes_file};
 use crate::session::{
     AstroConfigInfo, SessionValidationReport, find_astro_config, parse_astro_config,
@@ -313,7 +311,10 @@ pub fn run_full_check(project_dir: &Path, env: Option<&str>) -> Result<FullCheck
             suggestion: if is_clean {
                 None
             } else {
-                Some("Run `flareops headers fix` to correct caching and security headers".to_string())
+                Some(
+                    "Run `flareops headers fix` to correct caching and security headers"
+                        .to_string(),
+                )
             },
         });
         report.headers_report = Some(hreport);
@@ -325,8 +326,12 @@ pub fn run_full_check(project_dir: &Path, env: Option<&str>) -> Result<FullCheck
                 category: "Headers".to_string(),
                 title: "Pages _headers".to_string(),
                 passed: false,
-                message: "No `_headers` file found despite hashed Astro static assets in `dist/_astro`".to_string(),
-                suggestion: Some("Run `flareops headers generate` to create optimal headers".to_string()),
+                message:
+                    "No `_headers` file found despite hashed Astro static assets in `dist/_astro`"
+                        .to_string(),
+                suggestion: Some(
+                    "Run `flareops headers generate` to create optimal headers".to_string(),
+                ),
             });
         }
     }
@@ -373,7 +378,10 @@ pub fn run_full_check(project_dir: &Path, env: Option<&str>) -> Result<FullCheck
             suggestion: if is_clean {
                 None
             } else {
-                Some("Run `flareops session init` to scaffold missing session KV bindings".to_string())
+                Some(
+                    "Run `flareops session init` to scaffold missing session KV bindings"
+                        .to_string(),
+                )
             },
         });
         report.session_report = Some(sreport);

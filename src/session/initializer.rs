@@ -42,8 +42,8 @@ pub fn init_session(project_root: &Path, binding_name: &str) -> anyhow::Result<S
             }
         } else {
             let sanitized = sanitize_jsonc(&content);
-            let mut val: Value = serde_json::from_str(&sanitized)
-                .unwrap_or_else(|_| serde_json::json!({}));
+            let mut val: Value =
+                serde_json::from_str(&sanitized).unwrap_or_else(|_| serde_json::json!({}));
 
             let root_obj = val
                 .as_object_mut()
@@ -55,9 +55,9 @@ pub fn init_session(project_root: &Path, binding_name: &str) -> anyhow::Result<S
                 .as_array_mut()
                 .ok_or_else(|| anyhow::anyhow!("kv_namespaces is not an array"))?;
 
-            let binding_exists = kv_array.iter().any(|item| {
-                item.get("binding").and_then(|b| b.as_str()) == Some(binding_name)
-            });
+            let binding_exists = kv_array
+                .iter()
+                .any(|item| item.get("binding").and_then(|b| b.as_str()) == Some(binding_name));
 
             if !binding_exists {
                 let new_entry = serde_json::json!({
@@ -121,7 +121,9 @@ pub fn init_session(project_root: &Path, binding_name: &str) -> anyhow::Result<S
                 let session_insert = if binding_name == "SESSION" {
                     "\n  session: {\n    driver: 'cloudflare',\n  },"
                 } else {
-                    &format!("\n  session: {{\n    driver: 'cloudflare',\n    binding: '{binding_name}',\n  }},")
+                    &format!(
+                        "\n  session: {{\n    driver: 'cloudflare',\n    binding: '{binding_name}',\n  }},"
+                    )
                 };
 
                 let mut new_content = String::new();
@@ -142,7 +144,9 @@ pub fn init_session(project_root: &Path, binding_name: &str) -> anyhow::Result<S
         let session_snippet = if binding_name == "SESSION" {
             "session: {\n    driver: 'cloudflare',\n  },"
         } else {
-            &format!("session: {{\n    driver: 'cloudflare',\n    binding: '{binding_name}',\n  }},")
+            &format!(
+                "session: {{\n    driver: 'cloudflare',\n    binding: '{binding_name}',\n  }},"
+            )
         };
 
         let content = format!(

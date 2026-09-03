@@ -66,16 +66,16 @@ pub fn validate_headers(headers: &HeadersFile, dist_dir: Option<&Path>) -> Heade
         }
 
         // Scan for font and image assets
-        for entry in walkdir::WalkDir::new(dist).into_iter().filter_map(|e| e.ok()) {
+        for entry in walkdir::WalkDir::new(dist)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
             let path = entry.path();
             if path.is_file()
                 && let Some(ext) = path.extension().and_then(|e| e.to_str())
             {
                 let ext_lower = ext.to_lowercase();
-                if matches!(
-                    ext_lower.as_str(),
-                    "woff2" | "woff" | "ttf" | "otf" | "eot"
-                ) {
+                if matches!(ext_lower.as_str(), "woff2" | "woff" | "ttf" | "otf" | "eot") {
                     font_assets_found += 1;
                 } else if matches!(
                     ext_lower.as_str(),
@@ -97,7 +97,10 @@ pub fn validate_headers(headers: &HeadersFile, dist_dir: Option<&Path>) -> Heade
                     "Path pattern `{}` should start with `/` or `*`.",
                     rule.path_pattern
                 ),
-                suggestion: Some(format!("Change to `/{}", rule.path_pattern.trim_start_matches('/'))),
+                suggestion: Some(format!(
+                    "Change to `/{}",
+                    rule.path_pattern.trim_start_matches('/')
+                )),
             });
         }
 
@@ -117,8 +120,11 @@ pub fn validate_headers(headers: &HeadersFile, dist_dir: Option<&Path>) -> Heade
             // Check for conflicting max-age values in Cache-Control
             if k.eq_ignore_ascii_case("cache-control") {
                 let lower_v = v.to_lowercase();
-                let has_max_age_0 = lower_v.contains("max-age=0") || lower_v.contains("no-cache") || lower_v.contains("no-store");
-                let has_immutable = lower_v.contains("immutable") || lower_v.contains("max-age=31536000");
+                let has_max_age_0 = lower_v.contains("max-age=0")
+                    || lower_v.contains("no-cache")
+                    || lower_v.contains("no-store");
+                let has_immutable =
+                    lower_v.contains("immutable") || lower_v.contains("max-age=31536000");
 
                 if has_max_age_0 && has_immutable {
                     diagnostics.push(HeaderDiagnostic {

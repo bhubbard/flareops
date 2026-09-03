@@ -23,7 +23,10 @@ fn test_parse_and_serialize_headers() {
     assert_eq!(parsed.rules.len(), 2);
 
     let global = parsed.find_rule("/*").expect("global rule exists");
-    assert_eq!(global.headers.get("X-Frame-Options").map(|s| s.as_str()), Some("DENY"));
+    assert_eq!(
+        global.headers.get("X-Frame-Options").map(|s| s.as_str()),
+        Some("DENY")
+    );
 
     let astro = parsed.find_rule("/_astro/*").expect("astro rule exists");
     assert_eq!(
@@ -112,7 +115,11 @@ fn test_generate_optimal_headers_and_write() {
     let dist_dir = dir.path().join("dist");
     fs::create_dir_all(dist_dir.join("_astro")).unwrap();
     fs::create_dir_all(dist_dir.join("fonts")).unwrap();
-    fs::write(dist_dir.join("_astro/index.a1b2c3d4.js"), "console.log('astro');").unwrap();
+    fs::write(
+        dist_dir.join("_astro/index.a1b2c3d4.js"),
+        "console.log('astro');",
+    )
+    .unwrap();
     fs::write(dist_dir.join("fonts/inter.woff2"), "binaryfont").unwrap();
 
     let optimal = generate_optimal_headers(HeadersFile::default(), Some(&dist_dir));

@@ -59,9 +59,7 @@ fn handle_sync(args: SyncArgs) -> Result<()> {
             .with_context(|| format!("No wrangler config found in {}", args.path.display()))?
     };
 
-    let project_dir = wrangler_path
-        .parent()
-        .unwrap_or_else(|| Path::new("."));
+    let project_dir = wrangler_path.parent().unwrap_or_else(|| Path::new("."));
 
     let bindings = parse_wrangler_file(&wrangler_path, args.env.as_deref())?;
     let mode: SyncMode = args.mode.parse().unwrap_or(SyncMode::Astro);
@@ -163,9 +161,7 @@ fn handle_env(cmd: EnvCommand) -> Result<()> {
 fn handle_env_pull(args: EnvPullArgs) -> Result<()> {
     let wrangler_path = find_wrangler_config(&args.path)
         .with_context(|| format!("No wrangler config found in {}", args.path.display()))?;
-    let project_dir = wrangler_path
-        .parent()
-        .unwrap_or_else(|| Path::new("."));
+    let project_dir = wrangler_path.parent().unwrap_or_else(|| Path::new("."));
 
     let bindings = parse_wrangler_file(&wrangler_path, args.env.as_deref())?;
     let res = pull_dev_vars(&bindings, project_dir, args.example, args.force)?;
@@ -202,9 +198,7 @@ fn handle_env_pull(args: EnvPullArgs) -> Result<()> {
 fn handle_env_validate(args: EnvValidateArgs) -> Result<()> {
     let wrangler_path = find_wrangler_config(&args.path)
         .with_context(|| format!("No wrangler config found in {}", args.path.display()))?;
-    let project_dir = wrangler_path
-        .parent()
-        .unwrap_or_else(|| Path::new("."));
+    let project_dir = wrangler_path.parent().unwrap_or_else(|| Path::new("."));
 
     let bindings = parse_wrangler_file(&wrangler_path, args.env.as_deref())?;
     let report = validate_env(&bindings, project_dir);
@@ -445,7 +439,9 @@ fn handle_headers_generate(args: HeadersGenerateArgs) -> Result<()> {
     let parsed = HeadersFile::parse(&existing_content);
     let optimal = generate_optimal_headers(parsed, dist_dir);
 
-    let out_path = args.out.unwrap_or_else(|| resolve_headers_target(project_dir, dist_dir));
+    let out_path = args
+        .out
+        .unwrap_or_else(|| resolve_headers_target(project_dir, dist_dir));
     write_headers_file(&optimal, &out_path)?;
 
     println!(
@@ -614,10 +610,7 @@ fn handle_session_check(args: SessionCheckArgs) -> Result<()> {
     );
 
     println!();
-    println!(
-        "{}",
-        "⚡ FLAREOPS / ASTRO SESSION KV BINDING AUDIT".bold()
-    );
+    println!("{}", "⚡ FLAREOPS / ASTRO SESSION KV BINDING AUDIT".bold());
     println!("{}", "═".repeat(60).dimmed());
 
     if let Some(ref path) = astro_config.file_path {
@@ -670,10 +663,7 @@ fn handle_session_init(args: SessionInitArgs) -> Result<()> {
     let result = init_session(project_dir, &args.binding)?;
 
     println!();
-    println!(
-        "{}",
-        "⚡ FLAREOPS / ASTRO SESSION INITIALIZATION".bold()
-    );
+    println!("{}", "⚡ FLAREOPS / ASTRO SESSION INITIALIZATION".bold());
     println!("{}", "═".repeat(60).dimmed());
 
     for msg in &result.messages {

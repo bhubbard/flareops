@@ -168,7 +168,9 @@ pub fn validate_session(
             diagnostics.push(
                 SessionDiagnostic::error(
                     SessionCode::DuplicateKvBinding,
-                    format!("Multiple KV namespace bindings found with the name '{target_binding}'."),
+                    format!(
+                        "Multiple KV namespace bindings found with the name '{target_binding}'."
+                    ),
                 )
                 .with_suggestion("Remove duplicate KV namespace entries."),
             );
@@ -192,7 +194,9 @@ pub fn validate_session(
                 diagnostics.push(
                     SessionDiagnostic::error(
                         SessionCode::KvIdMissing,
-                        format!("KV namespace binding '{target_binding}' is missing the 'id' field."),
+                        format!(
+                            "KV namespace binding '{target_binding}' is missing the 'id' field."
+                        ),
                     )
                     .with_suggestion("Specify a valid Cloudflare KV namespace ID for 'id'."),
                 );
@@ -230,7 +234,9 @@ pub fn validate_session(
                 SessionCode::WranglerConfigNotFound,
                 "Wrangler configuration was not found.",
             )
-            .with_suggestion("Run `flareops session init` to scaffold wrangler.jsonc with SESSION KV binding."),
+            .with_suggestion(
+                "Run `flareops session init` to scaffold wrangler.jsonc with SESSION KV binding.",
+            ),
         );
     }
 
