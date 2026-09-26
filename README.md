@@ -4,7 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/flareops.svg)](https://crates.io/crates/flareops)
 [![npm](https://img.shields.io/npm/v/flareops.svg)](https://www.npmjs.com/package/flareops)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
-[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-black?logo=github)](https://bhubbard.github.io/flareops)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-black?logo=github)](https://code.brandonhubbard.com/flareops/)
 
 > ⚡ **Unified Developer Experience & Operations CLI for Cloudflare Workers, Pages, and Astro** — consolidating type synchronization, secret management, Pages `_routes.json` optimization, Pages `_headers` immutable caching & security rules, Astro KV session audits, and unified pre-deploy verification.
 
